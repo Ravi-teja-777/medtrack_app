@@ -36,9 +36,104 @@ dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION_NAME)
 sns = boto3.client('sns', region_name=AWS_REGION_NAME)
 
 # DynamoDB tables
-user_table = dynamodb.Table('UsersTable')
-appointment_table = dynamodb.Table('AppointmentsTable')
+# DynamoDB tables - update the table names to match exactly what's in your DynamoDB console
+user_table = dynamodb.Table('UsersTable')  # Change to match your actual table name
+appointment_table = dynamodb.Table('AppointmentsTable')  # Change to match your actual table name
 
+# This function should match your table name exactly
+def get_user_role(email):
+    try:
+        response = user_table.get_item(Key={'email': email})
+        if 'Item' in response:
+            return response['Item'].get('role')
+    except Exception as e:
+        app.logger.error(f"Error fetching role: {e}")
+    return None
+
+# Check if the table exists before trying to use it
+def ensure_tables_exist():
+    try:
+        # List all tables in DynamoDB
+        existing_tables = dynamodb.meta.client.list_tables()['TableNames']
+        
+        # Check if required tables exist
+        if 'UsersTable' not in existing_tables:
+            app.logger.error("UsersTable does not exist in DynamoDB")
+            # You could create the table here if needed
+            
+        if 'AppointmentsTable' not in existing_tables:
+            app.logger.error("AppointmentsTable does not exist in DynamoDB")
+            # You could create the table here if needed
+            
+        return True
+    except Exception as e:
+        app.logger.error(f"Error checking tables: {e}")
+        return False
+
+# Call this function at app startup
+ensure_tables_exist()
+
+def create_tables():
+    # Check if tables exist first
+    existing_tables = dynamodb.meta.client.list_tables()['TableNames']
+    
+    # Create UsersTable if it doesn't exist
+    if 'UsersTable' not in existing_tables:
+        try:
+            dynamodb.create_table(
+                TableName='UsersTable',
+                KeySchema=[
+                    {
+                        'AttributeName': 'email',
+                        'KeyType': 'HASH'  # Partition key
+                    }
+                ],
+                AttributeDefinitions=[
+                    {
+                        'AttributeName': 'email',
+                        'AttributeType': 'S'  # String
+                    }
+                ],
+                ProvisionedThroughput={
+                    'ReadCapacityUnits': 5,
+                    'WriteCapacityUnits': 5
+                }
+            )
+            print("Creating UsersTable. This may take a moment...")
+            # Wait for table to be created
+            dynamodb.meta.client.get_waiter('table_exists').wait(TableName='UsersTable')
+            print("UsersTable created successfully!")
+        except Exception as e:
+            print(f"Error creating UsersTable: {e}")
+    
+    # Create AppointmentsTable if it doesn't exist
+    if 'AppointmentsTable' not in existing_tables:
+        try:
+            dynamodb.create_table(
+                TableName='AppointmentsTable',
+                KeySchema=[
+                    {
+                        'AttributeName': 'appointment_id',
+                        'KeyType': 'HASH'  # Partition key
+                    }
+                ],
+                AttributeDefinitions=[
+                    {
+                        'AttributeName': 'appointment_id',
+                        'AttributeType': 'S'  # String
+                    }
+                ],
+                ProvisionedThroughput={
+                    'ReadCapacityUnits': 5,
+                    'WriteCapacityUnits': 5
+                }
+            )
+            print("Creating AppointmentsTable. This may take a moment...")
+            # Wait for table to be created
+            dynamodb.meta.client.get_waiter('table_exists').wait(TableName='AppointmentsTable')
+            print("AppointmentsTable created successfully!")
+        except Exception as e:
+            print(f"Error creating AppointmentsTable: {e}")
 # ---------------------------------------
 # Logging
 # ---------------------------------------
