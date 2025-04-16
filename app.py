@@ -1,39 +1,41 @@
 from flask import Flask, request, session, redirect, url_for, render_template, flash
 import boto3
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
-import uuid
+from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import logging
 import os
+import uuid
 # ---------------------------------------
 # Flask App Initialization
 # ---------------------------------------
 app = Flask(__name__)
+app.secret_key = 'your_secret_key_here'  # Replace with your own secret key
 
 # ---------------------------------------
 # App Configuration (Inline)
 # ---------------------------------------
-AWS_REGION_NAME = 'ap-south-1'  # Example: Mumbai region
+AWS_REGION_NAME = 'ap-south-1'  # Mumbai region
 
-# Email config (use App Passwords if Gmail)
+# Email config
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
-SENDER_EMAIL = 'sairaviteja478@gmail.com'  # Replace with your sender email
-SENDER_PASSWORD = 'uhcy crru tgex dnjg'    # Replace with your email app password
+SENDER_EMAIL = 'sairaviteja478@gmail.com'  # Your email
+SENDER_PASSWORD = 'uhcy crru tgex dnjg'     # App password
 ENABLE_EMAIL = True
 
+# SNS Topic ARN
+app.config['SNS_TOPIC_ARN'] = 'arn:aws:sns:ap-south-1:940482422578:Medtrack:2c78944f-bb5d-4fb1-9982-74334bdd772b'
+
 # ---------------------------------------
-# AWS Resources Using IAM Role (No Keys)
+# AWS Resources
 # ---------------------------------------
 dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION_NAME)
 sns = boto3.client('sns', region_name=AWS_REGION_NAME)
 
-# ---------------------------------------
-# DynamoDB Tables (Replace with your table names)
-# ---------------------------------------
+# DynamoDB tables
 user_table = dynamodb.Table('UsersTable')
 appointment_table = dynamodb.Table('AppointmentsTable')
 
@@ -45,12 +47,9 @@ logging.basicConfig(level=logging.INFO)
 # ---------------------------------------
 # Helper Functions
 # ---------------------------------------
-
-# Check if user is logged in
 def is_logged_in():
     return 'email' in session
 
-# Get user role from DynamoDB
 def get_user_role(email):
     try:
         response = user_table.get_item(Key={'email': email})
@@ -60,7 +59,6 @@ def get_user_role(email):
         app.logger.error(f"Error fetching role: {e}")
     return None
 
-# Send email notifications
 def send_email(to_email, subject, body):
     if not ENABLE_EMAIL:
         app.logger.info(f"[Email Skipped] Subject: {subject} to {to_email}")
