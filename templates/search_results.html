@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="text-align: center; color: #2c3e50; margin-bottom: 1rem;">Search Results</h2>
+    <p style="text-align: center; margin-bottom: 1.5rem;">Showing results for: <strong>"{{ search_term }}"</strong></p>
+    
+    {% if appointments %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    {% if session.role == 'doctor' %}
+                    <th>Patient</th>
+                    {% else %}
+                    <th>Doctor</th>
+                    {% endif %}
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appointment in appointments %}
+                <tr>
+                    <td>{{ appointment.appointment_id[:8] }}...</td>
+                    {% if session.role == 'doctor' %}
+                    <td>{{ appointment.patient_name }}</td>
+                    {% else %}
+                    <td>Dr. {{ appointment.doctor_name }}</td>
+                    {% endif %}
+                    <td>{{ appointment.appointment_date }}</td>
+                    <td>
+                        {% if appointment.status == 'pending' %}
+                        <span style="color: #e67e22; font-weight: bold;">{{ appointment.status|capitalize }}</span>
+                        {% else %}
+                        <span style="color: #27ae60; font-weight: bold;">{{ appointment.status|capitalize }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('view_appointment', appointment_id=appointment.appointment_id) }}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div style="text-align: center; padding: 2rem 0;">
+            <p>No appointments found matching your search term.</p>
+        </div>
+    {% endif %}
+    
+    <div style="text-align: center; margin-top: 1.5rem;">
+        <a href="{{ url_for('dashboard') }}" class="btn">Back to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

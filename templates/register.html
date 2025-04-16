@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block styles %}
+<style>
+    .register-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .role-selector {
+        display: flex;
+        margin-bottom: 1.5rem;
+        gap: 1rem;
+    }
+    
+    .role-option {
+        flex: 1;
+        text-align: center;
+        padding: 1.5rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .role-option.active {
+        border-color: #3498db;
+        background-color: rgba(52, 152, 219, 0.1);
+    }
+    
+    .role-option h3 {
+        margin-bottom: 0.5rem;
+    }
+    
+    .role-option input {
+        display: none;
+    }
+    
+    .register-form {
+        margin-top: 2rem;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 0;
+    }
+    
+    .form-row .form-group {
+        flex: 1;
+    }
+    
+    .doctor-fields {
+        display: none;
+    }
+    
+    .doctor-fields.show {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="card">
+        <h2>Create Your Account</h2>
+        <p>Join our healthcare platform to connect with doctors and manage your health.</p>
+        
+        <form method="POST" action="{{ url_for('register') }}" class="register-form">
+            <div class="role-selector">
+                <div class="role-option" onclick="selectRole('patient', this)">
+                    <h3>Patient</h3>
+                    <p>Book appointments and consult with doctors</p>
+                    <input type="radio" name="role" value="patient" checked>
+                </div>
+                <div class="role-option" onclick="selectRole('doctor', this)">
+                    <h3>Doctor</h3>
+                    <p>Provide consultations and diagnoses</p>
+                    <input type="radio" name="role" value="doctor">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" name="age" required min="1" max="120">
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="doctor-fields" id="doctorFields">
+                <div class="form-group">
+                    <label for="specialization">Specialization</label>
+                    <select id="specialization" name="specialization">
+                        <option value="">Select Specialization</option>
+                        <option value="Cardiology">Cardiology</option>
+                        <option value="Dermatology">Dermatology</option>
+                        <option value="Neurology">Neurology</option>
+                        <option value="Pediatrics">Pediatrics</option>
+                        <option value="Psychiatry">Psychiatry</option>
+                        <option value="Orthopedics">Orthopedics</option>
+                        <option value="Gynecology">Gynecology</option>
+                        <option value="General Medicine">General Medicine</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn">Register</button>
+            <p style="margin-top: 1rem; text-align: center;">
+                Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<script>
+    function selectRole(role, element) {
+        // Update visual selection
+        const options = document.querySelectorAll('.role-option');
+        options.forEach(option => option.classList.remove('active'));
+        element.classList.add('active');
+        
+        // Update radio button
+        document.querySelector(`input[value="${role}"]`).checked = true;
+        
+        // Show/hide doctor fields
+        const doctorFields = document.getElementById('doctorFields');
+        if (role === 'doctor') {
+            doctorFields.classList.add('show');
+            document.getElementById('specialization').setAttribute('required', '');
+        } else {
+            doctorFields.classList.remove('show');
+            document.getElementById('specialization').removeAttribute('required');
+        }
+    }
+    
+    // Initialize with patient role selected
+    window.onload = function() {
+        document.querySelector('.role-option').classList.add('active');
+    };
+</script>
+{% endblock %}

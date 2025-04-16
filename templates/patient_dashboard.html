@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Patient Dashboard{% endblock %}
+
+{% block styles %}
+<style>
+    .welcome-section {
+        background: linear-gradient(to right, #2c3e50, #3498db);
+        color: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .dashboard-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 1.2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #3498db;
+    }
+    
+    .search-form {
+        display: flex;
+        max-width: 500px;
+    }
+    
+    .search-form input {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right: none;
+    }
+    
+    .search-form button {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.3rem 0.6rem;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    .status-pending {
+        background-color: #f39c12;
+        color: white;
+    }
+    
+    .status-completed {
+        background-color: #27ae60;
+        color: white;
+    }
+    
+    .appointment-date {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+    
+    .tabs {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 1.5rem;
+    }
+    
+    .tab {
+        padding: 0.8rem 1.5rem;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+    }
+    
+    .tab.active {
+        border-bottom-color: #3498db;
+        color: #3498db;
+        font-weight: 500;
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .doctor-card {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+    
+    .doctor-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .doctor-avatar {
+        width: 60px;
+        height: 60px;
+        background-color: #3498db;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+    
+    .doctor-info {
+        flex: 1;
+    }
+    
+    .doctor-name {
+        font-weight: 500;
+        margin-bottom: 0.3rem;
+    }
+    
+    .doctor-specialization {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+    
+    .action-btns {
+        display: flex;
+        gap: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <h1>Welcome, {{ session.get('name', 'Patient') }}</h1>
+    <p>Manage your appointments and health records from your dashboard.</p>
+</div>
+
+<div class="dashboard-actions">
+    <h2>My Dashboard</h2>
+    <a href="{{ url_for('book_appointment') }}" class="btn">Book New Appointment</a>
+</div>
+
+<div class="stats-container">
+    <div class="stat-card">
+        <h3>{{ appointments|selectattr('status', 'equalto', 'pending')|list|length }}</h3>
+        <p>Pending Appointments</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ appointments|selectattr('status', 'equalto', 'completed')|list|length }}</h3>
+        <p>Completed Appointments</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ appointments|length }}</h3>
+        <p>Total Appointments</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('appointments')">My Appointments</div>
+        <div class="tab" onclick="switchTab('doctors')">Available Doctors</div>
+    </div>
+    
+    <div id="appointments" class="tab-content active">
+        <div class="appointments-header">
+            <h3>My Appointments</h3>
+            <form action="{{ url_for('search_appointments') }}" method="POST" class="search-form">
+                <input type="text" name="search_term" placeholder="Search doctor name or status...">
+                <button type="submit" class="btn">Search</button>
+            </form>
+        </div>
+        
+        {% if appointments|length > 0 %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Doctor</th>
+                        <th>Date</th>
+                        <th>Symptoms</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                        <tr>
+                            <td>Dr. {{ appointment.doctor_name }}</td>
+                            <td class="appointment-date">{{ appointment.appointment_date }}</td>
+                            <td>{{ appointment.symptoms }}</td>
+                            <td>
+                                {% if appointment.status == 'pending' %}
+                                    <span class="status-badge status-pending">Pending</span>
+                                {% else %}
+                                    <span class="status-badge status-completed">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('view_appointment', appointment_id=appointment.appointment_id) }}" class="btn btn-sm">View Details</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>You don't have any appointments yet. <a href="{{ url_for('book_appointment') }}">Book your first appointment</a>.</p>
+        {% endif %}
+    </div>
+    
+    <div id="doctors" class="tab-content">
+        <h3>Available Doctors</h3>
+        
+        {% if doctors|length > 0 %}
+            <div class="doctors-list">
+                {% for doctor in doctors %}
+                    <div class="doctor-card">
+                        <div class="doctor-avatar">
+                            {{ doctor.name[0] }}
+                        </div>
+                        <div class="doctor-info">
+                            <h4 class="doctor-name">Dr. {{ doctor.name }}</h4>
+                            <p class="doctor-specialization">{{ doctor.specialization|default('General Medicine') }}</p>
+                        </div>
+                        <div class="action-btns">
+                            <a href="{{ url_for('book_appointment') }}?doctor={{ doctor.email }}" class="btn">Book Appointment</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No doctors are available at the moment.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function switchTab(tabId) {
+        // Update tab selection
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => tab.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Show selected content
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+    }
+</script>
+{% endblock %}
